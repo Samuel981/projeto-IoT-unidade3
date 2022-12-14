@@ -1,0 +1,10 @@
+check_faces.py
+encode_faces.py
+recognize_faces_image.py
+recognize_faces_video_file.py
+search_bing_api.py
+recognize_faces_video.py
+examples/example_01.png
+examples/example_02.png
+examples/example_03.png
+output/lunch_scene_output.avi
