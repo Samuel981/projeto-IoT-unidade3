@@ -8,3 +8,5 @@ examples/example_01.png
 examples/example_02.png
 examples/example_03.png
 output/lunch_scene_output.avi
+access.py
+__pycache__/access.cpython-310.pyc

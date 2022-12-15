@@ -8,6 +8,7 @@ import imutils # type: ignore
 import time
 import pickle
 import os
+import access
 import cv2 # type: ignore
 from base64 import b64encode
 from datetime import datetime
@@ -22,8 +23,7 @@ ap.add_argument("-y", "--display", type=int, default=1,
                 help="whether or not to display output frame to screen")
 args = vars(ap.parse_args())
 
-key = 'aio_MQHx09Xg09rtjoO9BuVZGAPZAnbp'
-aio = Client(username='Samuel981', key=key)
+aio = Client(username=access.USER, key=access.KEY)
 feedTentativa = aio.feeds('desbloqueiofacial.tentativadedesbloqueio')
 feedAcesso = aio.feeds('desbloqueiofacial.sistemadeacesso')
 feedRegistro = aio.feeds('desbloqueiofacial.registro')
@@ -141,6 +141,7 @@ while True:
                 aio.send(feedAcesso.key, "ON")
                 aio.send(feedRegistro.key, "Desbloqueado por "+name)
             else:
+                aio.send(feedRegistro.key, "Tentativa de desbloqueio por <desconhecido>")
                 dataAtual = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
                 cv2.imwrite("images/nao_autorizado_"+dataAtual+".jpg", frame)
                 with open("images/nao_autorizado_"+dataAtual+".jpg", 'rb') as imageFile:
