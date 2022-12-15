@@ -9,6 +9,8 @@ import time
 import pickle
 import os
 import cv2 # type: ignore
+from base64 import b64encode
+from datetime import datetime
 from Adafruit_IO import Client, Feed, Data # type: ignore
 
 ap = argparse.ArgumentParser()
@@ -20,10 +22,12 @@ ap.add_argument("-y", "--display", type=int, default=1,
                 help="whether or not to display output frame to screen")
 args = vars(ap.parse_args())
 
-key = 'aio_wkVO438L5r3gZR1JlNrAuQdpKO9X'
+key = 'aio_MQHx09Xg09rtjoO9BuVZGAPZAnbp'
 aio = Client(username='Samuel981', key=key)
 feedTentativa = aio.feeds('desbloqueiofacial.tentativadedesbloqueio')
 feedAcesso = aio.feeds('desbloqueiofacial.sistemadeacesso')
+feedRegistro = aio.feeds('desbloqueiofacial.registro')
+feedCaptura = aio.feeds('desbloqueiofacial.captura')
 
 face_classifier = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
 
@@ -63,12 +67,12 @@ while True:
     image_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_classifier.detectMultiScale(image_gray, 1.3, 5)
     # Se encontrar algum rosto checa se alguem está tentando entrar (botao pressionado)
-    # and frame%2==0
     if(len(faces)>0):
-        estado = aio.receive(feedTentativa.key).value
-        tranca = aio.receive(feedAcesso.key).value
-        if(estado=="True" and tranca=="OFF"):
-            tentativa = True
+        estadoTentativa = aio.receive(feedTentativa.key).value
+        if(estadoTentativa=="True"):
+            estadoTranca = aio.receive(feedAcesso.key).value
+            if(estadoTranca=="OFF"):
+                tentativa = True
 
     # fim de transmissao
     if frame is None:
@@ -95,6 +99,7 @@ while True:
                                                     encoding)
             name = "Desconhecido"
 
+            # melhorar isso para aceitar uma pessoa por vez
             # check to see if we have found a match
             if True in matches:
                 # find the indexes of all matched faces then initialize a
@@ -131,6 +136,18 @@ while True:
             y = top - 15 if top - 15 > 15 else top + 15
             cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
                         0.75, (0, 255, 0), 2)
+            
+            if(name != "Desconhecido"):
+                aio.send(feedAcesso.key, "ON")
+                aio.send(feedRegistro.key, "Desbloqueado por "+name)
+            else:
+                dataAtual = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+                cv2.imwrite("images/nao_autorizado_"+dataAtual+".jpg", frame)
+                with open("images/nao_autorizado_"+dataAtual+".jpg", 'rb') as imageFile:
+                    img = b64encode(imageFile.read())
+                    aio.send(feedCaptura.key,  img.decode('utf-8'))
+                imageFile.close()
+
 
     # check to see if we are supposed to display the output frame to
     # the screen
