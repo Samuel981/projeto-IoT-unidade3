@@ -8,11 +8,12 @@ import imutils # type: ignore
 import time
 import pickle
 import os
+import sys
 import access
 import cv2 # type: ignore
 from base64 import b64encode
 from datetime import datetime
-from Adafruit_IO import Client, Feed, Data # type: ignore
+from Adafruit_IO import MQTTClient # type: ignore
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-e", "--encodings", required=True,
@@ -23,19 +24,38 @@ ap.add_argument("-y", "--display", type=int, default=1,
                 help="whether or not to display output frame to screen")
 args = vars(ap.parse_args())
 
-aio = Client(username=access.USER, key=access.KEY)
-feedTentativa = aio.feeds('desbloqueiofacial.tentativadedesbloqueio')
-feedAcesso = aio.feeds('desbloqueiofacial.sistemadeacesso')
-feedRegistro = aio.feeds('desbloqueiofacial.registro')
-feedCaptura = aio.feeds('desbloqueiofacial.captura')
+# aio = Client(username=access.USER, key=access.KEY)
+grupo = 'desbloqueiofacial.'
+feedTentativa = grupo+'tentativadedesbloqueio'
+feedAcesso = grupo+'sistemadeacesso'
+feedRegistro = grupo+'registro'
+feedCaptura = grupo+'captura'
 
-face_classifier = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
+def connected(client):
+    client.subscribe(feedTentativa, access.USER)
+    
+def disconnected(client):
+    print('Disconnected from Adafruit IO!')
+    sys.exit(1)
+    
+tentativa = False
+def message(client, feed_id, payload):
+    global tentativa
+    tentativa = not tentativa
 
 os.system('cls')
 print("------- [ Sistema de desbloqueio facial ] --------\n")
 print("[INFO] Carregando encodings...")
 data = pickle.loads(open(args["encodings"], "rb").read())
-
+# Create an MQTT client instance.
+print("[INFO] Conetando com o Adafruit_IO...")
+client = MQTTClient(access.USER, access.KEY)
+client.on_connect = connected
+client.on_disconnect = disconnected
+client.on_message = message
+# Connect to the Adafruit IO server.
+client.connect()
+client.loop_background()
 stream = cv2.VideoCapture(args["input"])
 writer = None
 
@@ -59,20 +79,8 @@ frame = 0
 
 # loop over frames from the video file stream
 while True:  
-    tentativa = False
     # grab the next frame
     (grabbed, frame) = stream.read()
-    
-    
-    image_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_classifier.detectMultiScale(image_gray, 1.3, 5)
-    # Se encontrar algum rosto checa se alguem está tentando entrar (botao pressionado)
-    if(len(faces)>0):
-        estadoTentativa = aio.receive(feedTentativa.key).value
-        if(estadoTentativa=="True"):
-            estadoTranca = aio.receive(feedAcesso.key).value
-            if(estadoTranca=="OFF"):
-                tentativa = True
 
     # fim de transmissao
     if frame is None:
@@ -138,17 +146,18 @@ while True:
                         0.75, (0, 255, 0), 2)
             
             if(name != "Desconhecido"):
-                aio.send(feedAcesso.key, "ON")
-                aio.send(feedRegistro.key, "Desbloqueado por "+name)
+                client.publish(feedAcesso, "ON")
+                client.publish(feedRegistro, "Desbloqueado por "+name)
             else:
-                aio.send(feedRegistro.key, "Tentativa de desbloqueio por <desconhecido>")
+                client.publish(feedRegistro, "Tentativa de desbloqueio por <desconhecido>")
                 dataAtual = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
                 cv2.imwrite("images/nao_autorizado_"+dataAtual+".jpg", frame)
                 with open("images/nao_autorizado_"+dataAtual+".jpg", 'rb') as imageFile:
                     img = b64encode(imageFile.read())
-                    aio.send(feedCaptura.key,  img.decode('utf-8'))
+                    client.publish(feedCaptura,  img.decode('utf-8'))
                 imageFile.close()
-
+            client.publish(feedTentativa, "False")
+            # tentativa = False
 
     # check to see if we are supposed to display the output frame to
     # the screen
