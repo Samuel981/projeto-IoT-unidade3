@@ -28,7 +28,7 @@ GRUPO = 'desbloqueiofacial.'
 FEED_TENTATIVA = GRUPO+'tentativadedesbloqueio'
 FEED_ACESSO = GRUPO+'sistemadeacesso'
 FEED_REGISTRO = GRUPO+'registro'
-FFEED_CAPTURA = GRUPO+'captura'
+FEED_CAPTURA = GRUPO+'captura'
 
 conexao = False
 def connected(client):
@@ -44,16 +44,19 @@ def disconnected(client):
 tranca = False
 tentativa = False
 # Troca o estado da variavel com base no estado do feed
-def solicitacao(client, feed_id, payload):
-    print(feed_id)
+def onFeedChange(client, feed_id, payload):
     if(feed_id == FEED_TENTATIVA):
         global tentativa
-        tentativa = not tentativa
+        if (payload == 'True'):
+            tentativa = True
+        else:
+            tentativa = False
     if(feed_id == FEED_ACESSO):
         global tranca
-        tranca = not tranca
-    print("Tentativa: "+str(tentativa))
-    print("Tranca: "+str(tranca))
+        if (payload == 'ON'):
+            tranca = True
+        else:
+            tranca = False
     
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
@@ -73,7 +76,7 @@ client = MQTTClient(access.USER, access.KEY)
     
 client.on_connect = connected
 client.on_disconnect = disconnected
-client.on_message = solicitacao
+client.on_message = onFeedChange
 
 # Connect to the Adafruit IO server.
 client.connect()
@@ -130,8 +133,7 @@ while True:
         # loop over the facial embeddings
         for encoding in encodings:
             # percorre banco de dados para encontrar correspondencia
-            matches = face_recognition.compare_faces(data["encodings"],
-                                                    encoding)
+            matches = face_recognition.compare_faces(data["encodings"], encoding)
             name = "Desconhecido"
 
             # melhorar isso para aceitar uma pessoa por vez
@@ -166,11 +168,9 @@ while True:
             left = int(left * r)
 
             # draw the predicted face name on the image
-            cv2.rectangle(frame, (left, top), (right, bottom),
-                        (0, 255, 0), 2)
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             y = top - 15 if top - 15 > 15 else top + 15
-            cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.75, (0, 255, 0), 2)
+            cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
             
             if(name != "Desconhecido"):
                 client.publish(FEED_ACESSO, "ON")
@@ -181,7 +181,7 @@ while True:
                 cv2.imwrite("images/nao_autorizado_"+dataAtual+".jpg", frame)
                 with open("images/nao_autorizado_"+dataAtual+".jpg", 'rb') as imageFile:
                     img = b64encode(imageFile.read())
-                    client.publish(FFEED_CAPTURA,  img.decode('utf-8'))
+                    client.publish(FEED_CAPTURA, img.decode('utf-8'))
                 imageFile.close()
             client.publish(FEED_TENTATIVA, "False")
 
