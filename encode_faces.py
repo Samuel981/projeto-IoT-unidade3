@@ -1,6 +1,5 @@
 # USAGE
-# python encode_faces.py --dataset dataset --encodings encodings.pickle
-# python encode_faces.py -i dataset/luke_skywalker -e encodings.pickle
+# python encode_faces.py -i dataset -e encodings.pickle
 
 # import the necessary packages
 from imutils import paths
@@ -33,9 +32,7 @@ for (i, imagePath) in enumerate(imagePaths):
 	# extract the person name from the image path
 	print("[INFO] processing image {}/{}".format(i + 1,
 		len(imagePaths)))
-	name = imagePath.split(os.path.sep)[-2].split("/")[1]
-	# print(name)
-	# name = imagePath.split("/")[1].split("\\")[0]
+	name = imagePath.split(os.path.sep)[-2]
 
 	# load the input image and convert it from RGB (OpenCV ordering)
 	# to dlib ordering (RGB)
@@ -60,6 +57,6 @@ for (i, imagePath) in enumerate(imagePaths):
 # dump the facial encodings + names to disk
 print("[INFO] serializing encodings...")
 data = {"encodings": knownEncodings, "names": knownNames}
-f = open(args["encodings"], "ab+")
+f = open(args["encodings"], "wb")
 f.write(pickle.dumps(data))
 f.close()
