@@ -1,5 +1,4 @@
 check_faces.py
-encode_faces.py
 recognize_faces_image.py
 recognize_faces_video_file.py
 search_bing_api.py

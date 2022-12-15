@@ -33,18 +33,27 @@ FFEED_CAPTURA = GRUPO+'captura'
 conexao = False
 def connected(client):
     client.subscribe(FEED_TENTATIVA, access.USER)
+    client.subscribe(FEED_ACESSO, access.USER)
     global conexao
     conexao = True
     
 def disconnected(client):
     print('[INFO] Desconectado do Adafruit IO!')
     sys.exit(1)
-    
+
+tranca = False
 tentativa = False
 # Troca o estado da variavel com base no estado do feed
 def solicitacao(client, feed_id, payload):
-    global tentativa
-    tentativa = not tentativa
+    print(feed_id)
+    if(feed_id == FEED_TENTATIVA):
+        global tentativa
+        tentativa = not tentativa
+    if(feed_id == FEED_ACESSO):
+        global tranca
+        tranca = not tranca
+    print("Tentativa: "+str(tentativa))
+    print("Tranca: "+str(tranca))
     
 def blockPrint():
     sys.stdout = open(os.devnull, 'w')
@@ -59,7 +68,7 @@ print("[INFO] Carregando encodings...")
 data = pickle.loads(open(args["encodings"], "rb").read())
 
 # Create an MQTT client instance.
-print("[INFO] Conetando com o Adafruit_IO...", end=" ")
+print("[INFO] Conetando com o Adafruit IO...", end=" ")
 client = MQTTClient(access.USER, access.KEY)
     
 client.on_connect = connected
@@ -113,7 +122,7 @@ while True:
     # corresponding to each face in the input frame, then compute
     # the facial embeddings for each face
     # Se existe uma tentativa de entrada (se o botao verde foi pressionado)
-    if(tentativa == True):
+    if((tentativa == True) and (tranca == False)):
         boxes = face_recognition.face_locations(rgb, model='hog')
         encodings = face_recognition.face_encodings(rgb, boxes)
         names = []
@@ -175,7 +184,6 @@ while True:
                     client.publish(FFEED_CAPTURA,  img.decode('utf-8'))
                 imageFile.close()
             client.publish(FEED_TENTATIVA, "False")
-            # tentativa = False
 
     # controla exibicao
     if args["display"] > 0:
