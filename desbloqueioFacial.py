@@ -176,10 +176,12 @@ while True:
                 client.publish(FEED_ACESSO, "ON")
                 client.publish(FEED_REGISTRO, "Desbloqueado por "+name)
             else:
+                extensao = ".jpg"
                 client.publish(FEED_REGISTRO, "Tentativa de desbloqueio por <desconhecido>")
                 dataAtual = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-                cv2.imwrite("images/nao_autorizado_"+dataAtual+".jpg", frame)
-                with open("images/nao_autorizado_"+dataAtual+".jpg", 'rb') as imageFile:
+                #Salvando com compressao
+                cv2.imwrite("images/nao_autorizado_"+dataAtual+extensao, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 35])
+                with open("images/nao_autorizado_"+dataAtual+extensao, 'rb') as imageFile:
                     img = b64encode(imageFile.read())
                     client.publish(FEED_CAPTURA, img.decode('utf-8'))
                 imageFile.close()
