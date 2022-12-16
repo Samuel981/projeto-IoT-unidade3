@@ -1,5 +1,6 @@
 # USAGE
 # python recognize_faces_video_file.py --encodings encodings.pickle --input videos/nome_do_video.mp4
+# python desbloqueioFacial.py -e encodings.pickle -i videos/cena.mp4
 # OU ... -e encodings.pickle -i videos/nome_do_video.mp4 -o output/nome_do_video.avi -d 0
 
 import face_recognition # type: ignore
@@ -158,6 +159,7 @@ while True:
 
             # update the list of names
             names.append(name)
+            break
 
         # loop over the recognized faces
         for ((top, right, bottom, left), name) in zip(boxes, names):

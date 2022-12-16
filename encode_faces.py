@@ -2,11 +2,11 @@
 # python encode_faces.py -i dataset -e encodings.pickle
 
 # import the necessary packages
-from imutils import paths
-import face_recognition
+from imutils import paths # type: ignore
+import face_recognition # type: ignore
 import argparse
 import pickle
-import cv2
+import cv2 # type: ignore
 import os
 
 # construct the argument parser and parse the arguments
