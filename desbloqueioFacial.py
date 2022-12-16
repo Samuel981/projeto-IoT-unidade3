@@ -137,7 +137,6 @@ while True:
             matches = face_recognition.compare_faces(data["encodings"], encoding)
             name = "Desconhecido"
 
-            # melhorar isso para aceitar uma pessoa por vez
             # check to see if we have found a match
             if True in matches:
                 # find the indexes of all matched faces then initialize a
@@ -175,12 +174,10 @@ while True:
             cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
             
             if(name != "Desconhecido"):
-                tranca = True
-                tentativa = False
                 client.publish(FEED_ACESSO, "ON")
                 client.publish(FEED_REGISTRO, "Desbloqueado por "+name)
             else:
-                extensao = ".jpg"
+                extensao = ".jpg" 
                 client.publish(FEED_REGISTRO, "Tentativa de desbloqueio por <desconhecido>")
                 dataAtual = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
                 #Salvando com compressao
@@ -189,6 +186,8 @@ while True:
                     img = b64encode(imageFile.read())
                     client.publish(FEED_CAPTURA, img.decode('utf-8'))
                 imageFile.close()
+            tranca = True
+            tentativa = False
             client.publish(FEED_TENTATIVA, "False")
 
     # controla exibicao
