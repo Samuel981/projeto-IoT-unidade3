@@ -173,6 +173,8 @@ while True:
             cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
             
             if(name != "Desconhecido"):
+                tranca = True
+                tentativa = False
                 client.publish(FEED_ACESSO, "ON")
                 client.publish(FEED_REGISTRO, "Desbloqueado por "+name)
             else:
