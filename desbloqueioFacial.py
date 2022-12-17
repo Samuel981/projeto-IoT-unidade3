@@ -18,7 +18,7 @@ from Adafruit_IO import MQTTClient # type: ignore
 ap = argparse.ArgumentParser()
 ap.add_argument("-e", "--encodings", required=True,
                 help="path to serialized db of facial encodings")
-ap.add_argument("-i", "--input", required=True,
+ap.add_argument("-i", "--input",
                 help="path to input video")
 ap.add_argument("-d", "--display", type=int, default=1,
                 help="whether or not to display output frame to screen")
@@ -89,12 +89,12 @@ while not conexao:
         print("conectado!")
 
 # define entrada de video e atraso entre frames
-stream = cv2.VideoCapture(args["input"])
 atraso = 50
-if stream is None:
+if args.get("input", None) is None:
     print("[INFO] Recebendo imagens ao vivo...")
     stream = cv2.VideoCapture(0)
 else:
+    stream = cv2.VideoCapture(args["input"])
     print("[INFO] Recebendo imagens...")
     fps = round(stream.get(cv2.CAP_PROP_FPS))
     atraso = int(1000/fps) #1 segundo (1000mili) / taxa de quadros
